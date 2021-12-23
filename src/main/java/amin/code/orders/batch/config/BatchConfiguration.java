@@ -46,7 +46,7 @@ public class BatchConfiguration {
     int randomWithNextInt = random.nextInt();
 
 
-    @Bean
+    @Bean(name = "emailSenderJob")
     public Job emailSenderJob() {
         return this.jobBuilderFactory.get(JOB_NAME+randomWithNextInt)
                 .start(emailSenderStep())
