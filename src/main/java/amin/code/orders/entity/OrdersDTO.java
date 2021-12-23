@@ -13,7 +13,7 @@ import java.util.Date;
 
 @Builder
 @Data
-@Entity
+@Entity(name = "shipped_order")
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrdersDTO {

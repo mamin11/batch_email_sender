@@ -5,7 +5,6 @@ import amin.code.orders.entity.OrdersDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -14,7 +13,6 @@ public class OrderWriter implements ItemWriter<OrdersDTO> {
     @Autowired
     ShippedOrderRepository shippedOrderRepository;
 
-    @Transactional
     @Override
     public void write(List<? extends OrdersDTO> list) throws Exception {
       log.debug("item writer: {}", list.get(0));
