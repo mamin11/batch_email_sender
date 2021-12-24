@@ -11,4 +11,6 @@ import java.util.Optional;
 public interface ShippedOrderRepository extends JpaRepository<OrdersDTO, Long> {
     Optional<OrdersDTO> findByStatus(boolean status);
     List<OrdersDTO> findByEmailSentAndStatus(boolean emailSent, boolean status);
+    long countByStatus(boolean status);
+    long countByEmailSent(boolean emailSent);
 }

@@ -16,10 +16,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.mail.SendFailedException;
+import java.time.LocalDate;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 @RestController
-@CrossOrigin("http://localhost:8081")
+@CrossOrigin(origins = "http://localhost:8080")
 @RequestMapping(path = "api/v1/orders")
 @Slf4j
 public class ApiController {
@@ -34,7 +39,7 @@ public class ApiController {
     @Qualifier("emailSenderJob")
     private Job emailSenderJob;
 
-    @GetMapping("/all")
+    @GetMapping("/test")
     public ResponseEntity<ResponseMessage> getAllOrders() {
         try {
             emailService.sendSimpleMessage("hello@world.com", "This is the message", "Thank you for registering with us");
@@ -44,20 +49,55 @@ public class ApiController {
         return ResponseEntity.status(HttpStatus.OK).body(new ResponseMessage("email sent"));
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<OrdersResponse> getTotalOrder() {
+        long ordersCount = shippedOrderRepository.count();
+
+        OrdersResponse response = new OrdersResponse();
+        response.setMessage("success");
+        HashMap<String, Long> count = new HashMap<>();
+        count.put("total", ordersCount);
+        response.setResponse(count);
+
+        return  ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @GetMapping("/email-sent")
+    public ResponseEntity<OrdersResponse> getEmailsSent() {
+        long ordersCount = shippedOrderRepository.countByEmailSent(true);
+
+        OrdersResponse response = new OrdersResponse();
+        response.setMessage("success");
+        HashMap<String, Long> count = new HashMap<>();
+        count.put("total", ordersCount);
+        response.setResponse(count);
+
+        return  ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
     @PostMapping("/send/notification")
     public ResponseEntity<ResponseMessage> sendEmails() {
-        JobParameters jobParameters = new JobParametersBuilder().toJobParameters();
+        Random random = new Random();
+        int randomWithNextInt = random.nextInt();
+
+        JobParameter param = new JobParameter(String.valueOf(randomWithNextInt));
+        JobParameters jobParameters = new JobParametersBuilder().addParameter("unique", param).toJobParameters();
         List<OrdersDTO> emailNotSentOrders = shippedOrderRepository.findByEmailSentAndStatus(false, true);
 
         if (emailNotSentOrders.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseMessage("Nothing to send"));
+            return ResponseEntity.status(HttpStatus.OK).body(new ResponseMessage("Nothing to send"));
         }
 
         try {
             final JobExecution jobExecution = jobLauncher.run(emailSenderJob, jobParameters);
-        } catch (JobInstanceAlreadyCompleteException | JobExecutionAlreadyRunningException | JobParametersInvalidException | JobRestartException e) {
+                Date create = jobExecution.getStartTime();
+                Date end = jobExecution.getEndTime();
+                int diff = end.getSeconds() - create.getSeconds();
+                log.debug("difference = {}", diff);
+                TimeUnit.SECONDS.sleep(diff);
+                return ResponseEntity.status(HttpStatus.OK).body(new ResponseMessage("success"));
+        } catch (JobInstanceAlreadyCompleteException | JobExecutionAlreadyRunningException | JobParametersInvalidException |InterruptedException | JobRestartException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseMessage(e.getMessage()));
         }
-        return ResponseEntity.status(HttpStatus.OK).body(new ResponseMessage("success"));
     }
 }
